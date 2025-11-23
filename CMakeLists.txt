@@ -39,6 +39,8 @@ add_subdirectory(libboardgame_base)
 add_subdirectory(libboardgame_mcts)
 add_subdirectory(libpentobi_base)
 add_subdirectory(libpentobi_mcts)
+add_subdirectory(examples)
+
 if(BUILD_TESTING)
     add_subdirectory(libboardgame_test)
 endif()
