@@ -95,9 +95,17 @@ int main() {
 
     std::cout << "Board after best_move:\n";
     std::cout << game.get_board() << "\n";
-
-
     const auto& geo = bd.get_geometry();
+
+
+    for (libpentobi_base::Point p : bd.get_move_points(best_move)) {
+        unsigned x = geo.get_x(p);
+        unsigned y = geo.get_y(p);
+
+        std::cout << x << ", " << y << std::endl;
+    }
+
+
     const auto& grid = bd.get_point_state();
 
     unsigned width  = geo.get_width();
