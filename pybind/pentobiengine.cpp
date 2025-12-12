@@ -9,6 +9,10 @@
 #include <string>
 #include <iostream>
 
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
 using namespace libpentobi_base;
 using namespace libboardgame_base;
 
@@ -91,6 +95,7 @@ BestMoveResult get_best_move(
     const std::vector<std::string>& p3_moves,
     const std::vector<std::string>& p4_moves
 ) {
+    std::cout << "Thinking..." << std::endl;
     BestMoveResult result;
 
     auto root = std::make_unique<SgfNode>();
@@ -99,21 +104,26 @@ BestMoveResult get_best_move(
     root->set_property("CA", "UTF-8");
 
     SgfNode* last_node = nullptr;
+    std::cout << "building tree..." << std::endl;
     build_sgf_4p(*root, p1_moves, p2_moves, p3_moves, p4_moves, last_node);
+    std::cout << "done building tree..." << std::endl;
 
     Game game(Variant::classic);
     game.init(root);
 
+    std::cout << "Gpoing to node..." << std::endl;
     if (last_node) {
         game.goto_node(*last_node);
     }
 
-    std::cout << "Board init:\n";
-    std::cout << game.get_board() << "\n";
+    std::cout << "Done going to node..." << std::endl;
+
+    std::cout << "board init" << std::endl;
+    std::cout << game.get_board() << std::endl;
 
     auto search = std::make_unique<libpentobi_mcts::Search>(
         Variant::classic,
-        1,
+        1, // n threads
         256 * 1024 * 1024
     );
 
@@ -162,76 +172,61 @@ static std::vector<std::string> collect_moves(
     return moves;
 }
 
+int main() {
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
 
-int main(int argc, char** argv) {
+    std::string line;
 
-    if (argc == 1) {
-    print_help(argv[0]);
-    return 0;
+    // Engine loop
+    while (std::getline(std::cin, line)) {
+        if (line.empty())
+            continue;
+
+        if (line == "quit") {
+            break;
+        }
+
+        json req;
+        try {
+            req = json::parse(line);
+        } catch (const std::exception& e) {
+            std::cout << R"({"error":"invalid json"})" << std::endl;
+            continue;
+        }
+        int player = req.value("player", 1);
+
+
+        std::vector<std::string> p1_moves = req.value("p1", std::vector<std::string>{});
+        std::vector<std::string> p2_moves = req.value("p2", std::vector<std::string>{});
+        std::vector<std::string> p3_moves = req.value("p3", std::vector<std::string>{});
+        std::vector<std::string> p4_moves = req.value("p4", std::vector<std::string>{});
+
+
+        std::vector<std::vector<int>> board; // unused, SGF drives state
+
+
+        BestMoveResult res = get_best_move(
+            board,
+            player,
+            p1_moves,
+            p2_moves,
+            p3_moves,
+            p4_moves
+        );
+
+        json out;
+        out["piece"] = res.piece_name;
+        out["coords"] = json::array();
+
+        for (const auto& [x, y] : res.coords) {
+            out["coords"].push_back({x, y});
+        }
+
+        std::cout << out.dump() << std::endl;
+        std::cout.flush();
     }
-
-    for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--help") {
-            print_help(argv[0]);
-            return 0;
-        }
-    }
-
-    int player = 1;
-
-    std::vector<std::string> p1_moves;
-    std::vector<std::string> p2_moves;
-    std::vector<std::string> p3_moves;
-    std::vector<std::string> p4_moves;
-
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-
-        if (arg == "--player" && i + 1 < argc) {
-            player = std::stoi(argv[++i]);
-        }
-        else if (arg == "--p1") {
-            p1_moves = collect_moves(i, argc, argv);
-        }
-        else if (arg == "--p2") {
-            p2_moves = collect_moves(i, argc, argv);
-        }
-        else if (arg == "--p3") {
-            p3_moves = collect_moves(i, argc, argv);
-        }
-        else if (arg == "--p4") {
-            p4_moves = collect_moves(i, argc, argv);
-        }
-        else {
-            std::cerr << "Unknown argument: " << arg << std::endl;
-            return 1;
-        }
-    }
-
-    // Dummy board for now (Pentobi ignores it because SGF drives state)
-    std::vector<std::vector<int>> board;
-
-    BestMoveResult res = get_best_move(
-        board,
-        player,
-        p1_moves,
-        p2_moves,
-        p3_moves,
-        p4_moves
-    );
-
-    std::cout << "{\n";
-    std::cout << "  \"piece\": \"" << res.piece_name << "\",\n";
-    std::cout << "  \"coords\": [";
-
-    for (size_t i = 0; i < res.coords.size(); ++i) {
-        const auto& [x, y] = res.coords[i];
-        std::cout << "[" << x << "," << y << "]";
-        if (i + 1 < res.coords.size())
-            std::cout << ",";
-    }
-
-    std::cout << "]\n}\n";
 
     return 0;
 }
+
