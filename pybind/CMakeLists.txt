@@ -1,4 +1,4 @@
-add_executable(pentobi_engine pentobiengine.cpp)
+add_executable(pentobi_engine server.cpp)
 
 target_include_directories(pentobi_engine PRIVATE
     ${CMAKE_SOURCE_DIR}/libpentobi_base
