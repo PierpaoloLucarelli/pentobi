@@ -1,4 +1,6 @@
 #include "server.h"
+#include "pentobi_engine.h"
+
 #include <unistd.h>
 #include <sys/socket.h>
 #include <iostream>
@@ -6,7 +8,8 @@
 #include <cstring>
 #include <thread>
 
-TurnBaseSocketServer::TurnBaseSocketServer(const std::string& socket_path) : socket_path_(socket_path), server_fd_(-1) {
+
+TurnBaseSocketServer::TurnBaseSocketServer(const std::string& socket_path, PentobiEngine engine) : socket_path_(socket_path), pentobi_engine(engine), server_fd_(-1) {
     setup_server();
 };
 
@@ -54,6 +57,8 @@ void simulateLongProcess(int steps = 10, int msPerStep = 500)
 void TurnBaseSocketServer::handle_client(int socket_fd){
     simulateLongProcess();
     std::cout<< "Someone connected" << std::endl;
+    std::string s = "movestr";
+    pentobi_engine.parse_move_str(s);
     close(socket_fd);
 };
 
@@ -71,7 +76,11 @@ void TurnBaseSocketServer::run(){
 
 
 int main(){
-    TurnBaseSocketServer server("/tmp/pentobi_server");
+    libpentobi_mcts::Float max_count = 100000;
+    size_t min_sims = 1000;
+    double max_time = 1.0; 
+    PentobiEngine engine(max_count, min_sims, max_time);
+    TurnBaseSocketServer server("/tmp/pentobi_server", engine);
     server.run();
     return 0;
 }
