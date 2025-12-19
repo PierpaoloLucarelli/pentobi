@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sys/un.h>
 #include <cstring>
-
+#include <thread>
 
 TurnBaseSocketServer::TurnBaseSocketServer(const std::string& socket_path) : socket_path_(socket_path), server_fd_(-1) {
     setup_server();
@@ -42,6 +42,22 @@ void TurnBaseSocketServer::setup_server(){
     std::cout << "Listening on " << socket_path_ << std::endl;
 };
 
+void simulateLongProcess(int steps = 10, int msPerStep = 500)
+{
+    for (int i = 1; i <= steps; ++i)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(msPerStep));
+        std::cout << "Progress: " << (i * 100 / steps) << "%\n";
+    }
+}
+
+void TurnBaseSocketServer::handle_client(int socket_fd){
+    simulateLongProcess();
+    std::cout<< "Someone connected" << std::endl;
+    close(socket_fd);
+};
+
+
 void TurnBaseSocketServer::run(){
     while(true){
         int client_fd = accept(server_fd_, nullptr, nullptr);
@@ -49,15 +65,13 @@ void TurnBaseSocketServer::run(){
             std::cerr << "Failed to accept" << std::endl;
         } 
 
-        std::cout<< "Someone connected" << std::endl;
-        close(client_fd);
+        std::thread(&TurnBaseSocketServer::handle_client, this, client_fd).detach();;
     }
 };
 
 
 int main(){
     TurnBaseSocketServer server("/tmp/pentobi_server");
-
     server.run();
     return 0;
 }

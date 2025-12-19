@@ -14,6 +14,8 @@ class TurnBaseSocketServer{
 
         void setup_server();
 
+        void handle_client(int socket_fd);
+
         std::string socket_path_;
 
         int server_fd_;
