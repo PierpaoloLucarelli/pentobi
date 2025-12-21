@@ -1,4 +1,12 @@
+#include <libpentobi_base/Variant.h>
+#include <libpentobi_base/Piece.h>
+#include <libpentobi_base/Color.h>
+#include <libpentobi_base/Board.h>
+#include <libpentobi_mcts/Search.h>
+#include <libpentobi_base/Move.h>
 #include "pentobi_engine.h"
+#include <libpentobi_base/Game.h>
+#include <libboardgame_base/CpuTimeSource.h>
 #include <iostream>
 
 PentobiEngine::PentobiEngine(libpentobi_mcts::Float max_n_iterations,  size_t min_n_sims, double max_time): 
@@ -6,7 +14,120 @@ PentobiEngine::PentobiEngine(libpentobi_mcts::Float max_n_iterations,  size_t mi
 
 };
 
+BestMoveResult PentobiEngine::get_best_move(
+    const std::vector<std::vector<int>>& board,
+    int player,
+    const std::vector<std::string>& p1_moves,
+    const std::vector<std::string>& p2_moves,
+    const std::vector<std::string>& p3_moves,
+    const std::vector<std::string>& p4_moves
+) {
+    std::cout << "Thinking..." << std::endl;
+    BestMoveResult result;
+
+    auto root = std::make_unique<libboardgame_base::SgfNode>();
+
+    root->set_property("GM", "Blokus");
+    root->set_property("CA", "UTF-8");
+
+    libboardgame_base::SgfNode* last_node = nullptr;
+    std::cout << "building tree..." << std::endl;
+    build_sgf_4p(*root, p1_moves, p2_moves, p3_moves, p4_moves, last_node);
+    std::cout << "done building tree..." << std::endl;
+
+    libpentobi_base::Game game(libpentobi_base::Variant::classic);
+    game.init(root);
+
+    std::cout << "Gpoing to node..." << std::endl;
+    if (last_node) {
+        game.goto_node(*last_node);
+    }
+
+    std::cout << "Done going to node..." << std::endl;
+
+    std::cout << "board init" << std::endl;
+    std::cout << game.get_board() << std::endl;
+
+    auto search = std::make_unique<libpentobi_mcts::Search>(
+        libpentobi_base::Variant::classic,
+        1, // n threads
+        256 * 1024 * 1024
+    );
+
+    libpentobi_base::Move best_move;
+    const libpentobi_base::Board& bd = game.get_board();
+    libpentobi_base::Color to_play = bd.get_effective_to_play();
+
+    libboardgame_base::CpuTimeSource ts;
+
+    libpentobi_mcts::Float max_count = 100000;       // max number of simulations
+    size_t min_sims = 1000;         // minimum number of simulations
+    double max_time = 1.0;          // 1 second
+    bool ok = search->search(
+        best_move,
+        bd,
+        to_play,
+        max_count,
+        min_sims,
+        max_time,
+        ts
+    );
+
+    libpentobi_base::Piece p = bd.get_move_piece(best_move);
+    auto pInfo = bd.get_piece_info(p);
+    result.piece_name = pInfo.get_name();
+    const auto& geo = bd.get_geometry();
+
+    for (libpentobi_base::Point p : bd.get_move_points(best_move)) {
+        unsigned x = geo.get_x(p);
+        unsigned y = geo.get_y(p);
+        result.coords.emplace_back(x, y);
+    }
+
+    return result;
+}
+
+ 
+
 void PentobiEngine::parse_move_str(const std::string& moves_str){
     std::cout << moves_str << std::endl;
+    libboardgame_base::SgfNode root;
+};
+
+ void PentobiEngine::build_sgf_4p(
+    libboardgame_base::SgfNode& root,
+    const std::vector<std::string>& p1,
+    const std::vector<std::string>& p2,
+    const std::vector<std::string>& p3,
+    const std::vector<std::string>& p4,
+    libboardgame_base::SgfNode*& last_node
+) {
+    size_t max_len = std::max(
+        {p1.size(), p2.size(), p3.size(), p4.size()}
+    );
+
+    libboardgame_base::SgfNode* node = nullptr;
+
+    for (size_t i = 0; i < max_len; ++i) {
+        if (i < p1.size()) {
+            node = node ? &node->create_new_child()
+                        : &root.create_new_child();
+            node->set_property("1", p1[i]);
+        }
+        if (i < p2.size()) {
+            node = &node->create_new_child();
+            node->set_property("2", p2[i]);
+        }
+        if (i < p3.size()) {
+            node = &node->create_new_child();
+            node->set_property("3", p3[i]);
+        }
+        if (i < p4.size()) {
+            node = &node->create_new_child();
+            node->set_property("4", p4[i]);
+        }
+    }
+
+    last_node = node;
 };
 

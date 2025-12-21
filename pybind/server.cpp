@@ -7,7 +7,10 @@
 #include <sys/un.h>
 #include <cstring>
 #include <thread>
+#include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
+const int SERVER_BUFFER_SIZE = 1024;
 
 TurnBaseSocketServer::TurnBaseSocketServer(const std::string& socket_path, PentobiEngine engine) : socket_path_(socket_path), pentobi_engine(engine), server_fd_(-1) {
     setup_server();
@@ -45,20 +48,36 @@ void TurnBaseSocketServer::setup_server(){
     std::cout << "Listening on " << socket_path_ << std::endl;
 };
 
-void simulateLongProcess(int steps = 10, int msPerStep = 500)
-{
-    for (int i = 1; i <= steps; ++i)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(msPerStep));
-        std::cout << "Progress: " << (i * 100 / steps) << "%\n";
-    }
-}
 
 void TurnBaseSocketServer::handle_client(int socket_fd){
-    simulateLongProcess();
+    char buffer[SERVER_BUFFER_SIZE];
+    ssize_t bytes = read(socket_fd, buffer, SERVER_BUFFER_SIZE - 1);
+    
+    if (bytes <= 0)
+    {
+        std::cout << "Something went wrong" << std::endl;
+        return;
+    }
+
+    buffer[bytes] = '\0'; 
+    std::string move_str(buffer);
     std::cout<< "Someone connected" << std::endl;
-    std::string s = "movestr";
-    pentobi_engine.parse_move_str(s);
+    std::vector<std::vector<std::string>> moves = parse_player_move_lists(move_str);
+
+    int player_to_play = 3;
+
+    std::vector<std::vector<int>> board;
+    BestMoveResult best_move = pentobi_engine.get_best_move(board, player_to_play, moves[0], moves[1], moves[2], moves[3]);
+    json out;
+    out["piece"] = best_move.piece_name;
+    out["coords"] = json::array();
+
+    for (const auto& [x, y] : best_move.coords) {
+        out["coords"].push_back({x, y});
+    }
+
+    std::cout << out.dump() << std::endl;
+    std::cout.flush();
     close(socket_fd);
 };
 
@@ -74,6 +93,33 @@ void TurnBaseSocketServer::run(){
     }
 };
 
+std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_lists(const std::string& input)
+{
+    using json = nlohmann::json;
+
+    std::vector<std::vector<std::string>> players(4);
+
+    auto j = json::parse(input);
+
+    if (!j.is_array()) {
+        throw std::runtime_error("Expected top-level JSON array");
+    }
+
+    for (size_t i = 0; i < j.size() && i < 4; ++i) {
+        if (!j[i].is_array()) {
+            throw std::runtime_error("Each player must be an array");
+        }
+
+        for (const auto& move_str : j[i]) {
+            if (!move_str.is_string()) {
+                throw std::runtime_error("Move must be a string");
+            }
+            players[i].push_back(move_str.get<std::string>());
+        }
+    }
+
+    return players;
+}
 
 int main(){
     libpentobi_mcts::Float max_count = 100000;
@@ -84,3 +130,5 @@ int main(){
     server.run();
     return 0;
 }
+
+// [["a20,b20,c20"],["r20,s20,t20"],[],[]]

@@ -2,7 +2,7 @@
 
 #include <string>
 #include "pentobi_engine.h"
-
+#include <vector>
 
 class TurnBaseSocketServer{
     public: 
@@ -17,6 +17,8 @@ class TurnBaseSocketServer{
         void setup_server();
 
         void handle_client(int);
+
+        std::vector<std::vector<std::string>> parse_player_move_lists(const std::string& input);
 
         std::string socket_path_;
 
