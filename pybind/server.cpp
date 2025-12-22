@@ -62,22 +62,22 @@ void TurnBaseSocketServer::handle_client(int socket_fd){
     buffer[bytes] = '\0'; 
     std::string move_str(buffer);
     std::cout<< "Someone connected" << std::endl;
-    std::vector<std::vector<std::string>> moves = parse_player_move_lists(move_str);
+    int player_to_play;
+    std::vector<std::vector<std::string>> moves = parse_player_move_lists(move_str, player_to_play);
 
-    int player_to_play = 3;
 
     std::vector<std::vector<int>> board;
     BestMoveResult best_move = pentobi_engine.get_best_move(board, player_to_play, moves[0], moves[1], moves[2], moves[3]);
     json out;
     out["piece"] = best_move.piece_name;
-    out["coords"] = json::array();
+    out["mat"] = best_move.mat;
+    std::string response = out.dump();
+    response.push_back('\n');
 
-    for (const auto& [x, y] : best_move.coords) {
-        out["coords"].push_back({x, y});
+    ssize_t sent = write(socket_fd, response.data(), response.size());
+    if (sent < 0){
+        perror("error in writing");
     }
-
-    std::cout << out.dump() << std::endl;
-    std::cout.flush();
     close(socket_fd);
 };
 
@@ -93,7 +93,7 @@ void TurnBaseSocketServer::run(){
     }
 };
 
-std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_lists(const std::string& input)
+std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_lists(const std::string& input, int& current_turn)
 {
     using json = nlohmann::json;
 
@@ -117,6 +117,13 @@ std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_li
             players[i].push_back(move_str.get<std::string>());
         }
     }
+
+    if (!j[4].is_number_integer()) {
+        throw std::runtime_error("Turn index must be an integer");
+    }
+
+    current_turn = j[4].get<int>();
+
 
     return players;
 }

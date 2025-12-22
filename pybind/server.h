@@ -18,7 +18,7 @@ class TurnBaseSocketServer{
 
         void handle_client(int);
 
-        std::vector<std::vector<std::string>> parse_player_move_lists(const std::string& input);
+        std::vector<std::vector<std::string>> parse_player_move_lists(const std::string& input, int& current_turn);
 
         std::string socket_path_;
 

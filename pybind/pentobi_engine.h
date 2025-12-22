@@ -8,7 +8,7 @@
 
 struct BestMoveResult {
     std::string piece_name;
-    std::vector<std::pair<int, int>> coords;
+    std::vector<std::vector<int>> mat;
 };
 
 class PentobiEngine{

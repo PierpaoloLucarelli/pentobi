@@ -1,4 +1,5 @@
 #include <libpentobi_base/Variant.h>
+#include <libpentobi_base/PointState.h>
 #include <libpentobi_base/Piece.h>
 #include <libpentobi_base/Color.h>
 #include <libpentobi_base/Board.h>
@@ -13,6 +14,26 @@ PentobiEngine::PentobiEngine(libpentobi_mcts::Float max_n_iterations,  size_t mi
     max_n_iterations(max_n_iterations), min_n_sims(min_n_sims), max_time(max_time){
 
 };
+
+void printMatrix(const std::vector<std::vector<int>>& mat)
+{
+    unsigned height = mat.size();
+    unsigned width  = mat[0].size();
+
+    for (unsigned y = 0; y < height; ++y)
+    {
+        for (unsigned x = 0; x < width; ++x)
+        {
+            int v = mat[y][x];
+
+            if (v == -1)
+                std::cout << ". ";     // empty
+            else
+                std::cout << v << ' '; // colour ID
+        }
+        std::cout << '\n';
+    }
+}
 
 BestMoveResult PentobiEngine::get_best_move(
     const std::vector<std::vector<int>>& board,
@@ -72,17 +93,31 @@ BestMoveResult PentobiEngine::get_best_move(
         max_time,
         ts
     );
-
+    game.play(to_play, best_move, false);
+    std::cout << "Board after best_move:\n";
+    std::cout << game.get_board() << "\n";
     libpentobi_base::Piece p = bd.get_move_piece(best_move);
     auto pInfo = bd.get_piece_info(p);
     result.piece_name = pInfo.get_name();
     const auto& geo = bd.get_geometry();
 
-    for (libpentobi_base::Point p : bd.get_move_points(best_move)) {
+    std::vector<std::vector<int>> mat(20, std::vector<int>(20, -1));
+
+    const auto& grid = bd.get_point_state();
+    // Iterate over ALL valid points
+    for (auto p : geo)
+    {
         unsigned x = geo.get_x(p);
         unsigned y = geo.get_y(p);
-        result.coords.emplace_back(x, y);
+
+        libpentobi_base::PointState s = grid[p];
+        int val = s.is_empty() ? -1 : s.to_int();   // -1 empty, 0–3 = colours
+
+        mat[y][x] = val;
     }
+
+    result.mat = mat;
+    printMatrix(mat);
 
     return result;
 }
