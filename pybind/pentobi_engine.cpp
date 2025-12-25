@@ -1,135 +1,114 @@
+#include "pentobi_engine.h"
+#include "move_convert.h"
+
 #include <libpentobi_base/Variant.h>
 #include <libpentobi_base/PointState.h>
 #include <libpentobi_base/Piece.h>
 #include <libpentobi_base/Color.h>
 #include <libpentobi_base/Board.h>
+#include <libpentobi_base/Game.h>
 #include <libpentobi_mcts/Search.h>
 #include <libpentobi_base/Move.h>
-#include "pentobi_engine.h"
-#include <libpentobi_base/Game.h>
 #include <libboardgame_base/CpuTimeSource.h>
-#include <iostream>
 
-PentobiEngine::PentobiEngine(libpentobi_mcts::Float max_n_iterations,  size_t min_n_sims, double max_time): 
-    max_n_iterations(max_n_iterations), min_n_sims(min_n_sims), max_time(max_time){
+#include <vector>
+#include <memory>
+#include <algorithm>
 
-};
+static constexpr int BOARD_W = 20;
+static constexpr int BOARD_H = 20;
 
-void printMatrix(const std::vector<std::vector<int>>& mat)
+PentobiEngine::PentobiEngine(
+    libpentobi_mcts::Float max_n_iterations,
+    size_t min_n_sims,
+    double max_time
+)
+    : max_n_iterations(max_n_iterations),
+      min_n_sims(min_n_sims),
+      max_time(max_time)
 {
-    unsigned height = mat.size();
-    unsigned width  = mat[0].size();
-
-    for (unsigned y = 0; y < height; ++y)
-    {
-        for (unsigned x = 0; x < width; ++x)
-        {
-            int v = mat[y][x];
-
-            if (v == -1)
-                std::cout << ". ";     // empty
-            else
-                std::cout << v << ' '; // colour ID
-        }
-        std::cout << '\n';
-    }
 }
 
-BestMoveResult PentobiEngine::get_best_move(
-    const std::vector<std::vector<int>>& board,
+
+static std::vector<int>
+board_to_1d(const libpentobi_base::Board& bd)
+{
+    std::vector<int> out(BOARD_W * BOARD_H, -1);
+    const auto& geo  = bd.get_geometry();
+    const auto& grid = bd.get_point_state();
+
+    for (auto p : geo) {
+        unsigned x = geo.get_x(p);
+        unsigned y = geo.get_y(p);
+        auto s = grid[p];
+        out[y * BOARD_W + x] = s.is_empty() ? -1 : s.to_int();
+    }
+
+    return out;
+}
+
+TurnBaseMove PentobiEngine::get_best_move(
     int player,
     const std::vector<std::string>& p1_moves,
     const std::vector<std::string>& p2_moves,
     const std::vector<std::string>& p3_moves,
     const std::vector<std::string>& p4_moves
 ) {
-    std::cout << "Thinking..." << std::endl;
-    BestMoveResult result;
 
     auto root = std::make_unique<libboardgame_base::SgfNode>();
-
     root->set_property("GM", "Blokus");
     root->set_property("CA", "UTF-8");
 
     libboardgame_base::SgfNode* last_node = nullptr;
-    std::cout << "building tree..." << std::endl;
     build_sgf_4p(*root, p1_moves, p2_moves, p3_moves, p4_moves, last_node);
-    std::cout << "done building tree..." << std::endl;
 
     libpentobi_base::Game game(libpentobi_base::Variant::classic);
     game.init(root);
 
-    std::cout << "Gpoing to node..." << std::endl;
     if (last_node) {
         game.goto_node(*last_node);
     }
 
-    std::cout << "Done going to node..." << std::endl;
-
-    std::cout << "board init" << std::endl;
-    std::cout << game.get_board() << std::endl;
-
     auto search = std::make_unique<libpentobi_mcts::Search>(
         libpentobi_base::Variant::classic,
-        1, // n threads
+        1,
         256 * 1024 * 1024
     );
 
-    libpentobi_base::Move best_move;
-    const libpentobi_base::Board& bd = game.get_board();
-    libpentobi_base::Color to_play = bd.get_effective_to_play();
-
+    libpentobi_base::Move best;
     libboardgame_base::CpuTimeSource ts;
 
-    libpentobi_mcts::Float max_count = 100000;       // max number of simulations
-    size_t min_sims = 1000;         // minimum number of simulations
-    double max_time = 1.0;          // 1 second
-    bool ok = search->search(
-        best_move,
-        bd,
-        to_play,
-        max_count,
-        min_sims,
+    const auto& bdin = game.get_board();
+    std::cout << bdin << std::endl;
+    search->search(
+        best,
+        bdin,
+        bdin.get_effective_to_play(),
+        max_n_iterations,
+        min_n_sims,
         max_time,
         ts
     );
-    game.play(to_play, best_move, false);
-    std::cout << "Board after best_move:\n";
-    std::cout << game.get_board() << "\n";
-    libpentobi_base::Piece p = bd.get_move_piece(best_move);
-    auto pInfo = bd.get_piece_info(p);
-    result.piece_name = pInfo.get_name();
-    const auto& geo = bd.get_geometry();
 
-    std::vector<std::vector<int>> mat(20, std::vector<int>(20, -1));
+    std::cout << "end" << std::endl;
+    libpentobi_base::Color to_play =
+        game.get_board().get_effective_to_play();
 
-    const auto& grid = bd.get_point_state();
-    // Iterate over ALL valid points
-    for (auto p : geo)
-    {
-        unsigned x = geo.get_x(p);
-        unsigned y = geo.get_y(p);
+    std::vector<int> boardIn = board_to_1d(bdin);
+    game.play(to_play, best, false);
 
-        libpentobi_base::PointState s = grid[p];
-        int val = s.is_empty() ? -1 : s.to_int();   // -1 empty, 0–3 = colours
+    const auto& bd = game.get_board();
+    libpentobi_base::Piece piece = bd.get_move_piece(best);
+    auto info = bd.get_piece_info(piece);
 
-        mat[y][x] = val;
-    }
+    int piece_id = pieceMap[info.get_name()];
 
-    result.mat = mat;
-    printMatrix(mat);
+    std::vector<int> boardOut = board_to_1d(bd);
 
-    return result;
+    return convertMove(piece_id, player, boardIn, boardOut);
 }
 
- 
-
-void PentobiEngine::parse_move_str(const std::string& moves_str){
-    std::cout << moves_str << std::endl;
-    libboardgame_base::SgfNode root;
-};
-
- void PentobiEngine::build_sgf_4p(
+void PentobiEngine::build_sgf_4p(
     libboardgame_base::SgfNode& root,
     const std::vector<std::string>& p1,
     const std::vector<std::string>& p2,
@@ -164,5 +143,5 @@ void PentobiEngine::parse_move_str(const std::string& moves_str){
     }
 
     last_node = node;
-};
+}
 

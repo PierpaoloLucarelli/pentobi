@@ -1,4 +1,4 @@
-add_executable(pentobi_engine server.cpp pentobi_engine.cpp)
+add_executable(pentobi_engine server.cpp pentobi_engine.cpp move_convert.cpp)
 
 target_include_directories(pentobi_engine PRIVATE
     ${CMAKE_SOURCE_DIR}/libpentobi_base

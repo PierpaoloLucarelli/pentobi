@@ -1,4 +1,5 @@
 #include "server.h"
+#include "move_convert.h"
 #include "pentobi_engine.h"
 
 #include <unistd.h>
@@ -67,10 +68,13 @@ void TurnBaseSocketServer::handle_client(int socket_fd){
 
 
     std::vector<std::vector<int>> board;
-    BestMoveResult best_move = pentobi_engine.get_best_move(board, player_to_play, moves[0], moves[1], moves[2], moves[3]);
+    TurnBaseMove best_move = pentobi_engine.get_best_move(player_to_play, moves[0], moves[1], moves[2], moves[3]);
     json out;
-    out["piece"] = best_move.piece_name;
-    out["mat"] = best_move.mat;
+    out["piece"] = best_move.piece_id;
+    out["row"] = best_move.row;
+    out["col"] = best_move.col;
+    out["rotation"] = best_move.rotation;
+    out["turn"] = best_move.turn;
     std::string response = out.dump();
     response.push_back('\n');
 
@@ -129,7 +133,7 @@ std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_li
 }
 
 int main(){
-    libpentobi_mcts::Float max_count = 100000;
+    libpentobi_mcts::Float max_count = 10000;
     size_t min_sims = 1000;
     double max_time = 1.0; 
     PentobiEngine engine(max_count, min_sims, max_time);
