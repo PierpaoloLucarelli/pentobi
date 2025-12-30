@@ -132,7 +132,7 @@ std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_li
 
 int main(){
     std::cout << "server starter" << std::endl;
-    libpentobi_mcts::Float max_count = 1000;
+    libpentobi_mcts::Float max_count = 100000;
     size_t min_sims = 1000;
     double max_time = 1.0; 
     PentobiEngine engine(max_count, min_sims, max_time);
