@@ -1,4 +1,5 @@
 #include "move_convert.h"
+#include <fstream>
 #include "libpentobi_base/BoardConst.h"
 #include "libpentobi_base/Color.h"
 #include "libpentobi_base/Move.h"
@@ -92,7 +93,36 @@ std::vector<int> makeBoard(const Board& b){
 }
 
 
-int main(){
-  generateMap();
-  return 0;
+int main()
+{
+    std::vector<TurnBaseMove> moves = generateMap();
+
+    std::ofstream out("cached_moves.cpp");
+    if (!out) {
+        std::cerr << "Failed to open cached_moves.cpp\n";
+        return 1;
+    }
+
+    out << "// GENERATED FILE — DO NOT EDIT\n";
+    out << "#include <vector>\n";
+    out << "#include \"move_convert.h\"\n\n";
+
+    out << "const std::vector<TurnBaseMove> cachedMoves = {\n";
+
+    for (const auto& m : moves) {
+        out << "    {"
+            << static_cast<int>(m.pieceId) << ", "
+            << static_cast<int>(m.row) << ", "
+            << static_cast<int>(m.col) << ", "
+            << static_cast<int>(m.rotation)
+            << "},\n";
+    }
+
+    out << "};\n";
+    out.close();
+
+    std::cout << "Generated cached_moves.cpp with "
+              << moves.size() << " entries\n";
+
+    return 0;
 }
