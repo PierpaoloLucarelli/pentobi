@@ -1,4 +1,5 @@
-add_executable(pentobi_engine server.cpp pentobi_engine.cpp move_convert.cpp)
+add_executable(pentobi_engine server.cpp pentobi_engine.cpp)
+add_executable(generate_map move_convert.cpp)
 
 target_include_directories(pentobi_engine PRIVATE
     ${CMAKE_SOURCE_DIR}/libpentobi_base
@@ -6,8 +7,21 @@ target_include_directories(pentobi_engine PRIVATE
     ${CMAKE_SOURCE_DIR}/libboardgame_mcts
     ${CMAKE_SOURCE_DIR}/libpentobi_mcts
 )
+target_include_directories(generate_map PRIVATE
+    ${CMAKE_SOURCE_DIR}/libpentobi_base
+    ${CMAKE_SOURCE_DIR}/libboardgame_base
+    ${CMAKE_SOURCE_DIR}/libboardgame_mcts
+    ${CMAKE_SOURCE_DIR}/libpentobi_mcts
+)
 
 target_link_libraries(pentobi_engine
+    PRIVATE
+        boardgame_base
+        pentobi_base
+        boardgame_mcts
+        pentobi_mcts
+)
+target_link_libraries(generate_map
     PRIVATE
         boardgame_base
         pentobi_base

@@ -1,5 +1,7 @@
 #pragma once
+#include "libpentobi_base/Board.h"
 #include <vector>
+#include <optional>
 #include <unordered_map>
 #include <string>
 #include <cstdint>
@@ -40,15 +42,37 @@ const Block rotatedPieces[21] = {
 	Block('u', 5, 3, 3, {{{0, 0},{1, 0},{0, 1},{-1, 0},{0, -1}},{{0, 0},{0, 1},{-1, 0},{0, -1},{1, 0}},{{0, 0},{-1, 0},{0, -1},{1, 0},{0, 1}},{{0, 0},{0, -1},{1, 0},{0, 1},{-1, 0}},{{0, 0},{-1, 0},{0, 1},{1, 0},{0, -1}},{{0, 0},{0, -1},{-1, 0},{0, 1},{1, 0}},{{0, 0},{1, 0},{0, -1},{-1, 0},{0, 1}},{{0, 0},{0, 1},{1, 0},{0, -1},{-1, 0}}}, {1,2,3,4})
 };
 
+void pbd_vec(const std::vector<int>& b)
+{
+    constexpr int W = 20;
+    constexpr int H = 20;
+
+    for (int y = 0; y < H; ++y) {
+        for (int x = 0; x < W; ++x) {
+            int v = b[y * W + x];
+            if (v == -1)
+                std::cout << ". ";
+            else
+                std::cout << v << ' ';
+        }
+        std::cout << '\n';
+    }
+    std::cout << std::endl;
+}
+
+void pbd(const libpentobi_base::Board& b) {
+   std::cout << b << std::endl;
+}
+
 std::unordered_map<std::string, int> pieceMap = {
-  {"I1", 0},
-  {"I2", 1},
+  {"1", 0},
+  {"2", 1},
   {"I3", 2},
   {"V3", 3},
   {"I4", 4},
   {"L4", 5},
   {"T4", 6},
-  {"O4", 7},
+  {"O", 7},
   {"Z4", 8},
   {"I5", 9},
   {"L5", 10},
@@ -56,7 +80,7 @@ std::unordered_map<std::string, int> pieceMap = {
   {"P", 12},
   {"U", 13},
   {"Y", 14},
-  {"T", 15},
+  {"T5", 15},
   {"V5", 16},
   {"W", 17},
   {"Z5", 18},
@@ -73,6 +97,8 @@ struct TurnBaseMove{
 
 std::vector<TurnBaseMove> generateMap();
 
-TurnBaseMove findMove(std::vector<int> board, std::vector<std::pair<int, int>> coords);
+std::optional<std::pair<int, int>> findMove(const std::vector<int>& inBoard, const std::vector<int>& outBoard, const std::vector<std::pair<int, int>>& coords);
 
 std::vector<int> applyMove(int row, int col, std::vector<std::pair<int, int>> coords);
+
+std::vector<int> makeBoard(const libpentobi_base::Board& b);
