@@ -5,7 +5,7 @@
 #include "Variant.h"
 #include "Point.h"
 #include "SgfNode.h"
-// #include "BoardConst.h"
+#include "BoardConst.h"
 #include "libboardgame_mcts/SearchBase.h"
 #include "libpentobi_mcts/Search.h"
 
