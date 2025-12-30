@@ -2,6 +2,7 @@
 #include <libpentobi_base/PointState.h>
 #include <libpentobi_base/Piece.h>
 #include <libpentobi_base/Color.h>
+#include "cached_moves.h"
 #include <libpentobi_base/Board.h>
 #include <libpentobi_mcts/Search.h>
 #include <libpentobi_base/Move.h>
@@ -35,7 +36,7 @@ void printMatrix(const std::vector<std::vector<int>>& mat)
     }
 }
 
-BestMoveResult PentobiEngine::get_best_move(
+TurnBaseMove PentobiEngine::get_best_move(
     const std::vector<std::vector<int>>& board,
     int player,
     const std::vector<std::string>& p1_moves,
@@ -93,33 +94,7 @@ BestMoveResult PentobiEngine::get_best_move(
         max_time,
         ts
     );
-    game.play(to_play, best_move, false);
-    std::cout << "Board after best_move:\n";
-    std::cout << game.get_board() << "\n";
-    libpentobi_base::Piece p = bd.get_move_piece(best_move);
-    auto pInfo = bd.get_piece_info(p);
-    result.piece_name = pInfo.get_name();
-    const auto& geo = bd.get_geometry();
-
-    std::vector<std::vector<int>> mat(20, std::vector<int>(20, -1));
-
-    const auto& grid = bd.get_point_state();
-    // Iterate over ALL valid points
-    for (auto p : geo)
-    {
-        unsigned x = geo.get_x(p);
-        unsigned y = geo.get_y(p);
-
-        libpentobi_base::PointState s = grid[p];
-        int val = s.is_empty() ? -1 : s.to_int();   // -1 empty, 0–3 = colours
-
-        mat[y][x] = val;
-    }
-
-    result.mat = mat;
-    printMatrix(mat);
-
-    return result;
+    return cachedMoves[best_move.to_int()];
 }
 
  

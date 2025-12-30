@@ -1,4 +1,5 @@
 #include <vector>
+#include "cached_moves.h"
 #include "move_convert.h"
 
 const std::vector<TurnBaseMove> cachedMoves = {
