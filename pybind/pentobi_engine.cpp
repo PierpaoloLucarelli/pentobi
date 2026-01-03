@@ -141,15 +141,18 @@ void PentobiEngine::parse_move_str(const std::string& moves_str){
             node->set_property("1", p1[i]);
         }
         if (i < p2.size()) {
-            node = &node->create_new_child();
+            node = node ? &node->create_new_child()
+                        : &root.create_new_child();
             node->set_property("2", p2[i]);
         }
         if (i < p3.size()) {
-            node = &node->create_new_child();
+            node = node ? &node->create_new_child()
+                        : &root.create_new_child();
             node->set_property("3", p3[i]);
         }
         if (i < p4.size()) {
-            node = &node->create_new_child();
+            node = node ? &node->create_new_child()
+                        : &root.create_new_child();
             node->set_property("4", p4[i]);
         }
     }
