@@ -34,6 +34,8 @@ struct TurnBaseMove{
 
 std::vector<TurnBaseMove> generateMap();
 
+std::unordered_map<std::string, int> reverseMap(std::vector<TurnBaseMove>);
+
 std::optional<std::pair<int, int>> findMove(const std::vector<int>& inBoard, const std::vector<int>& outBoard, const std::vector<std::pair<int, int>>& coords);
 
 std::vector<int> applyMove(int row, int col, std::vector<std::pair<int, int>> coords);

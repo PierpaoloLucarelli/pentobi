@@ -1,4 +1,4 @@
-add_executable(pentobi_test test3.cpp)
+add_executable(pentobi_test test4.cpp)
 
 target_include_directories(pentobi_test PRIVATE
     ${CMAKE_SOURCE_DIR}/libpentobi_base

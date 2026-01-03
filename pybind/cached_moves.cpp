@@ -1,8 +1,10 @@
+// GENERATED FILE — DO NOT EDIT
 #include <vector>
 #include "cached_moves.h"
 #include "move_convert.h"
 
 const std::vector<TurnBaseMove> cachedMoves = {
+    {0, 0, 0, 0},
     {16, 0, 0, 1},
     {16, 0, 1, 1},
     {16, 0, 2, 1},

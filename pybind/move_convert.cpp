@@ -10,6 +10,15 @@
 
 using namespace libpentobi_base;
 
+bool sameBoard(const std::vector<int>& a, const std::vector<int>& b) {
+
+    return a == b;
+}
+
+void printBoard(libpentobi_base::Board& bd){
+  std::cout << bd << std::endl;
+}
+
 const Block rotatedPieces[21] = {
 	Block('a', 1, 1, 1, {{{0, 0}},{{0, 0}},{{0, 0}},{{0, 0}},{{0, 0}},{{0, 0}},{{0, 0}},{{0, 0}}}, {0}),
 	Block('b', 2, 1, 2, {{{0, 0},{0, 1}},{{0, 0},{-1, 0}},{{0, 0},{0, -1}},{{0, 0},{1, 0}},{{0, 0},{0, 1}},{{0, 0},{-1, 0}},{{0, 0},{0, -1}},{{0, 0},{1, 0}}}, {0,1}),
@@ -81,9 +90,9 @@ std::unordered_map<std::string, int> pieceMap = {
 };
 std::vector<TurnBaseMove> generateMap()
 {
-    std::vector<TurnBaseMove> result;
     const auto& bc=libpentobi_base::BoardConst::get(libpentobi_base::Variant::classic);
     int total_moves = bc.get_range();  
+    std::vector<TurnBaseMove> result(total_moves);
     for(Move::IntType id=1;id<total_moves;++id){
         Move mv(id);
         std::cout << static_cast<double>(id)/total_moves << std::endl;
@@ -106,14 +115,14 @@ std::vector<TurnBaseMove> generateMap()
             }
             int pieceId = it->second;
 
-            const Block& b=rotatedPieces[pieceId];
+          const Block& b=rotatedPieces[pieceId];
             const auto& coords=b.coords[r];
             std::vector<int> outBoard=makeBoard(bd);
             std::vector<int> inBoard(20*20,-1);
             auto rowCol=findMove(inBoard,outBoard,coords);
             if(rowCol){
               found = true;
-              result.emplace_back(pieceId,rowCol->first,rowCol->second,r);
+              result[id] = TurnBaseMove(pieceId,rowCol->first,rowCol->second,r);
               break;
             }
         }
@@ -139,7 +148,9 @@ findMove(const std::vector<int>& board,
             if(rr<0||rr>=H||cc<0||cc>=W){ok=false;break;}
             tmp[rr*W+cc]=0;
         }
-        if(ok&&tmp==outBoard)return {{r,c}};
+        if(ok&&tmp==outBoard){
+          return {{r,c}};
+        }
     }
     return std::nullopt;
 }
@@ -150,21 +161,33 @@ std::vector<int> makeBoard(const Board& b){
     const auto& grid = b.get_point_state();
     for (auto p : geo)
     {
-        unsigned x = geo.get_x(p);
-        unsigned y = geo.get_y(p);
+        unsigned col = geo.get_x(p);
+        unsigned row = geo.get_y(p);
 
         PointState s = grid[p];
         int val = s.is_empty() ? -1 : s.to_int();   // -1 empty, 0–3 = colours
 
-        v[y*20+x]= val;
+        v[row*20+col]= val;
     }
     return v;
 }
 
+std::unordered_map<std::string, int> reverseMap(std::vector<TurnBaseMove> moves){
+  std::unordered_map<std::string, int> result;
+  for(size_t i = 0 ; i < moves.size(); i++ ){
+    TurnBaseMove move = moves[i];
+    std::string key = std::to_string(move.pieceId) + ","  + std::to_string(move.row) + "," +  std::to_string(move.col) + "," + std::to_string(move.rotation);
+    result[key] = i;
+  } 
+  return result;
+}
 
 int main()
 {
     std::vector<TurnBaseMove> moves = generateMap();
+    std::unordered_map<std::string, int> rm = reverseMap(moves);
+
+    /* ---------- C++ FILE ---------- */
 
     std::ofstream out("cached_moves.cpp");
     if (!out) {
@@ -191,8 +214,30 @@ int main()
     out << "};\n";
     out.close();
 
+    /* ---------- PYTHON FILE ---------- */
+
+    std::ofstream py("cached_moves.py");
+    if (!py) {
+        std::cerr << "Failed to open cached_moves.py\n";
+        return 1;
+    }
+
+    py << "# GENERATED FILE — DO NOT EDIT\n";
+    py << "# Auto-generated from C++\n\n";
+    py << "reverse_moves = {\n";
+
+    for (const auto& [key, value] : rm) {
+        py << "    \"" << key << "\": " << value << ",\n";
+    }
+
+    py << "}\n";
+    py.close();
+
     std::cout << "Generated cached_moves.cpp with "
               << moves.size() << " entries\n";
+    std::cout << "Generated cached_moves.py with "
+              << rm.size() << " entries\n";
 
     return 0;
 }
+
