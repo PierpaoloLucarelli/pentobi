@@ -59,12 +59,12 @@ TurnBaseMove PentobiEngine::get_best_move(
 
     libpentobi_base::Game game(libpentobi_base::Variant::classic);
     game.init(root);
-
+    libpentobi_base::Color to_play(player);
     std::cout << "Gpoing to node..." << std::endl;
     if (last_node) {
         game.goto_node(*last_node);
     }
-
+    game.set_to_play(to_play);
     std::cout << "Done going to node..." << std::endl;
 
     std::cout << "board init" << std::endl;
@@ -78,13 +78,17 @@ TurnBaseMove PentobiEngine::get_best_move(
 
     libpentobi_base::Move best_move;
     const libpentobi_base::Board& bd = game.get_board();
-    libpentobi_base::Color to_play = bd.get_effective_to_play();
+    //libpentobi_base::Color to_play = bd.get_effective_to_play();
 
     libboardgame_base::CpuTimeSource ts;
 
     libpentobi_mcts::Float max_count = 100000;       // max number of simulations
     size_t min_sims = 1000;         // minimum number of simulations
     double max_time = 1.0;          // 1 second
+                                    //
+    if(!bd.has_moves(to_play)){
+      return cachedMoves[0];
+    }
     bool ok = search->search(
         best_move,
         bd,
@@ -95,19 +99,19 @@ TurnBaseMove PentobiEngine::get_best_move(
         ts
     );
     game.play(to_play, best_move, false);
-
+    
     std::cout << "Board after best_move:\n";
     std::cout << best_move.to_int() << std::endl;
     std::cout << game.get_board() << "\n";
-    const auto& geo = bd.get_geometry();
+    //const auto& geo = bd.get_geometry();
 
 
-    for (libpentobi_base::Point p : bd.get_move_points(best_move)) {
-        unsigned x = geo.get_x(p);
-        unsigned y = geo.get_y(p);
-
-        std::cout << x << ", " << y << std::endl;
-    }
+    //for (libpentobi_base::Point p : bd.get_move_points(best_move)) {
+    //    unsigned x = geo.get_x(p);
+    //    unsigned y = geo.get_y(p);
+    //
+    //    std::cout << x << ", " << y << std::endl;
+    //}
 
 
     return cachedMoves[best_move.to_int()];
