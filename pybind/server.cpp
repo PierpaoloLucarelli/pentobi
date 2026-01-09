@@ -158,13 +158,14 @@ std::vector<std::vector<std::string>> TurnBaseSocketServer::parse_player_move_li
     return players;
 }
 
-int main(){
+int main(int argc, char* argv[]){
+    std::string socket_path = argv[1];
     std::cout << "server starter" << std::endl;
     libpentobi_mcts::Float max_count = 1000;
     size_t min_sims = 1000;
     double max_time = 1.0; 
     PentobiEngine engine(max_count, min_sims, max_time);
-    TurnBaseSocketServer server("/tmp/pentobi_server", engine);
+    TurnBaseSocketServer server(socket_path, engine);
     server.run();
     return 0;
 }

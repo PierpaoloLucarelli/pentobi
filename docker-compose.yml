@@ -1,0 +1,15 @@
+services:
+  cpp_engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pentobi-engine
+    volumes:
+      - cpp_socket:/sockets
+    command: ["/app/cpp_server"]
+    restart: no 
+
+volumes:
+  cpp_socket:
+    name: cpp_socket
+
