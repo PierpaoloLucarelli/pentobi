@@ -1,28 +1,31 @@
 #pragma once
 
 #include <string>
-#include "pentobi_engine.h"
 #include <vector>
+#include <semaphore>
+#include <nlohmann/json.hpp>
 
-class TurnBaseSocketServer{
-    public: 
-        explicit TurnBaseSocketServer(const std::string& socket_path, PentobiEngine engine);
+#include "pentobi_engine.h"
 
-        ~TurnBaseSocketServer();
+class TurnBaseSocketServer {
+public:
+    TurnBaseSocketServer(const std::string& socket_path,
+                         PentobiEngine engine);
+    ~TurnBaseSocketServer();
 
-        void run();
+    void run();
 
-    private:
+private:
+    void setup_server();
+    void handle_client(int client_fd);
 
-        void setup_server();
+    std::vector<std::vector<std::string>>
+    parse_player_move_lists(const std::string& input, int& turn);
 
-        void handle_client(int);
+    std::string socket_path_;
+    PentobiEngine pentobi_engine_;
+    int server_fd_;
 
-        std::vector<std::vector<std::string>> parse_player_move_lists(const std::string& input, int& current_turn);
-
-        std::string socket_path_;
-
-        int server_fd_;
-
-        PentobiEngine pentobi_engine;
+    std::counting_semaphore<32> client_limit_{32};
 };
+

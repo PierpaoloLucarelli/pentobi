@@ -1,4 +1,4 @@
-add_executable(pentobi_engine server.cpp pentobi_engine.cpp)
+add_executable(pentobi_engine server.cpp pentobi_engine.cpp main.cpp crash_handler.cpp logger.cpp validation.cpp)
 add_executable(generate_map move_convert.cpp)
 
 target_include_directories(pentobi_engine PRIVATE
