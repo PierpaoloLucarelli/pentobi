@@ -82,10 +82,6 @@ TurnBaseMove PentobiEngine::get_best_move(
 
     libboardgame_base::CpuTimeSource ts;
 
-    libpentobi_mcts::Float max_count = 100000;       // max number of simulations
-    size_t min_sims = 1000;         // minimum number of simulations
-    double max_time = 1.0;          // 1 second
-                                    //
     if(!bd.has_moves(to_play)){
       return cachedMoves[0];
     }
@@ -93,8 +89,8 @@ TurnBaseMove PentobiEngine::get_best_move(
         best_move,
         bd,
         to_play,
-        max_count,
-        min_sims,
+        max_n_iterations,
+        min_n_sims,
         max_time,
         ts
     );

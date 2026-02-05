@@ -10,8 +10,8 @@ int main(int argc, char* argv[]) {
 
     install_crash_handlers();
 
-    libpentobi_mcts::Float max_count = 1000;
-    size_t min_sims = 1000;
+    libpentobi_mcts::Float max_count = 100;
+    size_t min_sims = 100;
     double max_time = 1.0;
 
     PentobiEngine engine(max_count, min_sims, max_time);
