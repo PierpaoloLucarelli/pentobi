@@ -78,7 +78,6 @@ TurnBaseMove PentobiEngine::get_best_move(
 
     libpentobi_base::Move best_move;
     const libpentobi_base::Board& bd = game.get_board();
-    //libpentobi_base::Color to_play = bd.get_effective_to_play();
 
     libboardgame_base::CpuTimeSource ts;
 
@@ -94,21 +93,12 @@ TurnBaseMove PentobiEngine::get_best_move(
         max_time,
         ts
     );
+
     game.play(to_play, best_move, false);
     
     std::cout << "Board after best_move:\n";
     std::cout << best_move.to_int() << std::endl;
     std::cout << game.get_board() << "\n";
-    //const auto& geo = bd.get_geometry();
-
-
-    //for (libpentobi_base::Point p : bd.get_move_points(best_move)) {
-    //    unsigned x = geo.get_x(p);
-    //    unsigned y = geo.get_y(p);
-    //
-    //    std::cout << x << ", " << y << std::endl;
-    //}
-
 
     return cachedMoves[best_move.to_int()];
 }

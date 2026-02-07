@@ -67,6 +67,10 @@ public:
                 size_t min_simulations, double max_time,
                 TimeSource& time_source);
 
+    bool get_move(Move& mv, const Board& bd, Color to_play, Float max_count,
+                size_t min_simulations, double max_time,
+                TimeSource& time_source);
+
     const History& get_last_history() const;
 
     /** Get board position of last search at root node as setup.

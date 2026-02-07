@@ -167,6 +167,15 @@ string Search::get_info() const
     return s.str();
 }
 
+bool Search::get_move(Move& mv, const Board& bd, Color to_play,
+                    Float max_count, size_t min_simulations,
+                    double max_time, TimeSource& time_source)
+{
+  auto& root = get_tree().get_root();
+  return 0;
+}
+
+
 //-----------------------------------------------------------------------------
 
 } // namespace libpentobi_mcts

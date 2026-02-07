@@ -10,12 +10,12 @@ int main(int argc, char* argv[]) {
 
     install_crash_handlers();
 
-    libpentobi_mcts::Float max_count = 100;
-    size_t min_sims = 100;
-    double max_time = 1.0;
+    libpentobi_mcts::Float max_count = 0;
+    size_t min_sims =0; 
+    double max_time = 0;
+
 
     PentobiEngine engine(max_count, min_sims, max_time);
-
     TurnBaseSocketServer server(argv[1], engine);
     server.run();
 }

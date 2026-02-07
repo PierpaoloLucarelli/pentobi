@@ -1307,26 +1307,40 @@ inline auto SearchBase<S, M, R>::select_child(
     return best_child;
 }
 
+
 template<class S, class M, class R>
-auto SearchBase<S, M, R>::select_final() const-> const Node*
+auto SearchBase<S, M, R>::select_final() const -> const Node*
 {
-    // Select the child with the highest number of wins
     auto children = m_tree.get_children(m_tree.get_root());
     if (children.empty())
         return nullptr;
-    auto i = children.begin();
-    auto best_child = i;
-    auto max_wins = i->get_value_count() * i->get_value();
-    while (++i != children.end())
+
+    constexpr double temperature = 1.5; // higher = weaker
+    static thread_local std::mt19937 rng{std::random_device{}()};
+
+    std::vector<double> weights;
+    weights.reserve(children.size());
+
+    for (const auto& c : children)
     {
-        auto wins = i->get_value_count() * i->get_value();
-        if (wins > max_wins)
-        {
-            max_wins = wins;
-            best_child = i;
-        }
+        weights.push_back(
+            std::pow(
+                static_cast<double>(c.get_value_count()),
+                1.0 / temperature
+            )
+        );
     }
-    return best_child;
+
+    std::discrete_distribution<size_t> dist(
+        weights.begin(), weights.end()
+    );
+
+    const size_t index = dist(rng);
+
+    auto it = children.begin();
+    std::advance(it, index);
+
+    return &(*it);
 }
 
 template<class S, class M, class R>
